@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pago Cooperadora</title>
+
+  <!-- Ícono de la pestaña: solo el símbolo del logo -->
+  <link rel="icon" type="image/png" sizes="64x64" href="{{ url_for('static', filename='favicon.png') }}">
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --brand: #e2483d;          /* rojo coral del logo */
+      --brand-dark: #bf352c;
+      --band: #f8c7a6;           /* durazno/naranja suave: franja del título */
+      --panel: #fdeee3;          /* fondo de las secciones */
+      --ink: #2b1d1a;
+      --bg: #fbf6f2;
+    }
+
+    body {
+      font-family: 'Roboto', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+
+    .app-card {
+      max-width: 460px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 1.5rem;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(120, 50, 30, .13);
+    }
+
+    @media (min-width: 576px) {
+      body { padding: 2rem 0; }
+    }
+
+    /* Logo */
+    .brand-bar {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      padding: .9rem 1.1rem;
+    }
+    .brand-bar img { height: 48px; width: auto; }
+
+    .title-band {
+      background: var(--band);
+      text-align: center;
+      padding: .8rem 1rem;
+      font-weight: 700;
+      font-size: 1.05rem;
+      letter-spacing: .01em;
+      margin: 0;
+    }
+
+    .form-body { padding: .9rem; }
+
+    .section {
+      background: var(--panel);
+      border-radius: 1rem;
+      padding: 1rem;
+    }
+
+    .section h2 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      text-align: center;
+      margin: 0 0 .75rem;
+    }
+
+    .form-label { font-weight: 500; margin-bottom: .25rem; }
+
+    .form-control, .form-select {
+      border-radius: .7rem;
+      border: 1px solid #e3c4b3;
+      padding: .65rem .8rem;
+      font-size: 1rem;           /* 16px evita el zoom automático en iOS */
+    }
+
+    .form-control:focus, .form-select:focus {
+      border-color: var(--brand);
+      box-shadow: 0 0 0 .22rem rgba(226, 72, 61, .22);
+    }
+
+    /* Campos de cursada desactivados (docentes / no docentes) */
+    .form-select:disabled {
+      background-color: #ece7e3;
+      color: #9a8f8a;
+      border-color: #ddd5d0;
+      cursor: not-allowed;
+    }
+    .was-validated .form-select:disabled {
+      border-color: #ddd5d0;
+      padding-right: 2.25rem;
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+      background-position: right .75rem center;
+      background-size: 16px 12px;
+    }
+    .section.inactiva h2,
+    .section.inactiva .form-label { color: #9a8f8a; }
+
+    .btn-brand {
+      background: var(--brand);
+      border: 0;
+      color: #fff;
+      font-weight: 700;
+      letter-spacing: .02em;
+      border-radius: 999px;
+      padding: .85rem 1rem;
+      box-shadow: 0 6px 14px rgba(226, 72, 61, .32);
+      transition: background .15s, transform .1s;
+    }
+    .btn-brand:hover, .btn-brand:focus { background: var(--brand-dark); color: #fff; }
+    .btn-brand:active { transform: scale(.98); }
+
+    .success-msg {
+      display: none;
+      background: #e3f3e8;
+      color: #1d5130;
+      border-radius: .8rem;
+      padding: .75rem 1rem;
+      text-align: center;
+      font-weight: 500;
+    }
+    .success-msg.error {
+      background: #fde2e0;
+      color: #8a1f17;
+    }
+  </style>
+</head>
+<body>
+
+  <main class="app-card">
+
+    <header class="brand-bar">
+      <img src="{{ url_for('static', filename='logo.png') }}" alt="ISFT N° 12">
+    </header>
+
+    <h1 class="title-band">CUOTA COOPERADORA</h1>
+
+    <form id="registro" class="form-body" novalidate>
+
+      <div class="section mb-3">
+        <h2>Datos personales</h2>
+
+        <div class="row g-3">
+
+          <!-- Tipo de contribuyente: define si aplican Carrera y Año -->
+          <div class="col-12">
+            <label for="tipo" class="form-label">Tipo de contribuyente</label>
+            <select class="form-select" id="tipo" name="tipo" required>
+              <option value="" selected disabled>Elegí una opción</option>
+              <option value="Alumno">Alumno</option>
+              <option value="Docente">Docente</option>
+              <option value="No docente">No docente (regencia, dirección, porteros, etc.)</option>
+            </select>
+            <div class="invalid-feedback">Elegí el tipo de contribuyente.</div>
+          </div>
+
+          <!-- Fila 1: Nombre y Apellido lado a lado -->
+          <div class="col-12 col-sm-6">
+            <label for="nombre" class="form-label">Nombre</label>
+            <input type="text" class="form-control" id="nombre" name="nombre"
+                   placeholder="Nombre" autocomplete="given-name" required>
+            <div class="invalid-feedback">Ingresá tu nombre.</div>
+          </div>
+
+          <div class="col-12 col-sm-6">
+            <label for="apellido" class="form-label">Apellido</label>
+            <input type="text" class="form-control" id="apellido" name="apellido"
+                   placeholder="Apellido" autocomplete="family-name" required>
+            <div class="invalid-feedback">Ingresá tu apellido.</div>
+          </div>
+
+          <!-- Fila 2: DNI a ancho completo -->
+          <div class="col-12">
+            <label for="dni" class="form-label">DNI</label>
+            <input type="text" class="form-control" id="dni" name="dni"
+                   inputmode="numeric" pattern="[0-9]{7,8}" maxlength="8"
+                   placeholder="Sin puntos" autocomplete="off" required>
+            <div class="invalid-feedback">Ingresá un DNI de 7 u 8 números.</div>
+          </div>
+
+          <!-- Fila 3: Email a ancho completo -->
+          <div class="col-12">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" class="form-control" id="email" name="email"
+                   inputmode="email" placeholder="nombre@correo.com"
+                   autocomplete="email" required>
+            <div class="invalid-feedback">Ingresá un email válido.</div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="section mb-3" id="seccion-cursada">
+        <h2>Datos de cursada</h2>
+
+        <div class="row g-3">
+          <div class="col-12 col-sm-8">
+            <label for="carrera" class="form-label">Carrera</label>
+            <select class="form-select" id="carrera" name="carrera" required>
+              <option value="" selected disabled>Elegí una carrera</option>
+              <option>Analista de Sistemas</option>
+              <option>Desarrollo de Software</option>
+              <option>Ciencia de Datos e IA</option>
+              <option>IoT</option>
+              <option>Seguridad e Higiene</option>
+            </select>
+            <div class="invalid-feedback">Elegí una carrera.</div>
+          </div>
+
+          <div class="col-12 col-sm-4">
+            <label for="anio" class="form-label">Año</label>
+            <select class="form-select" id="anio" name="anio" required>
+              <option value="" selected disabled>Elegí el año</option>
+              <option>1°</option>
+              <option>2°</option>
+              <option>3°</option>
+            </select>
+            <div class="invalid-feedback">Elegí el año.</div>
+          </div>
+        </div>
+
+        <p id="nota-cursada" class="small text-center text-secondary mt-3 mb-0" hidden>
+          Carrera y año no aplican para este tipo de contribuyente.
+        </p>
+      </div>
+
+      <div id="ok" class="success-msg mb-3" role="status">¡Datos enviados correctamente!</div>
+
+      <div class="d-grid">
+        <button type="submit" class="btn btn-brand btn-lg">ENVIAR</button>
+      </div>
+
+      <div class="text-center mt-3">
+        <a href="{{ url_for('salir') }}" class="small text-secondary">Cerrar sesión</a>
+      </div>
+
+    </form>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    /* ============================================================
+       EFECTOS DEL BOTÓN: sonido de caja registradora + confeti
+       ============================================================ */
+
+    // Colores del confeti (los de la paleta cálida del instituto)
+    const COLORES_CONFETI = ['#e2483d', '#f28c4b', '#f8c7a6', '#ffd166', '#bf352c', '#ffffff'];
+    const CANTIDAD_CONFETI = 70;   // piezas en total (mitad por lado)
+
+    // --- Sonido "¡cha-ching!" generado por código (no necesita archivo) ---
+    function sonidoCaja() {
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        const ctx = new AC();
+        const t0 = ctx.currentTime;
+
+        // "Cha": ráfaga corta de ruido (el golpe de la caja)
+        const largo = Math.floor(ctx.sampleRate * 0.09);
+        const buffer = ctx.createBuffer(1, largo, ctx.sampleRate);
+        const datos = buffer.getChannelData(0);
+        for (let i = 0; i < largo; i++) datos[i] = (Math.random() * 2 - 1) * (1 - i / largo);
+        const ruido = ctx.createBufferSource();
+        ruido.buffer = buffer;
+        const filtro = ctx.createBiquadFilter();
+        filtro.type = 'bandpass';
+        filtro.frequency.value = 2500;
+        const gRuido = ctx.createGain();
+        gRuido.gain.setValueAtTime(0.5, t0);
+        gRuido.gain.exponentialRampToValueAtTime(0.001, t0 + 0.09);
+        ruido.connect(filtro).connect(gRuido).connect(ctx.destination);
+        ruido.start(t0);
+
+        // "Ching": dos campanitas agudas con eco
+        [[2093, 0.10], [3136, 0.19]].forEach(([freq, inicio]) => {
+          [1, 2.76].forEach((mult, i) => {       // armónicos que dan timbre metálico
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = freq * mult;
+            const vol = i === 0 ? 0.35 : 0.12;
+            g.gain.setValueAtTime(0.0001, t0 + inicio);
+            g.gain.exponentialRampToValueAtTime(vol, t0 + inicio + 0.005);
+            g.gain.exponentialRampToValueAtTime(0.0001, t0 + inicio + 0.9);
+            osc.connect(g).connect(ctx.destination);
+            osc.start(t0 + inicio);
+            osc.stop(t0 + inicio + 1);
+          });
+        });
+
+        setTimeout(() => ctx.close(), 1500);
+      } catch (e) { /* si el navegador bloquea el audio, seguimos sin sonido */ }
+    }
+
+    // --- Confeti que sale hacia los costados del botón ---
+    function confeti(boton) {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+      const canvas = document.createElement('canvas');
+      Object.assign(canvas.style, {
+        position: 'fixed', inset: '0', width: '100%', height: '100%',
+        pointerEvents: 'none', zIndex: '9999'
+      });
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = innerWidth * dpr;
+      canvas.height = innerHeight * dpr;
+      document.body.appendChild(canvas);
+      const c = canvas.getContext('2d');
+      c.scale(dpr, dpr);
+
+      const r = boton.getBoundingClientRect();
+      const origenY = r.top + r.height / 2;
+
+      const piezas = Array.from({ length: CANTIDAD_CONFETI }, (_, i) => {
+        const haciaDerecha = i % 2 === 0;
+        const origenX = haciaDerecha ? r.right - 12 : r.left + 12;
+        // ángulo: sale casi horizontal, un poco hacia arriba
+        const angulo = (haciaDerecha ? 0 : Math.PI) + (Math.random() - 0.5) * 1.1 + (haciaDerecha ? -0.45 : 0.45);
+        const fuerza = 6 + Math.random() * 9;
+        return {
+          x: origenX, y: origenY,
+          vx: Math.cos(angulo) * fuerza,
+          vy: Math.sin(angulo) * fuerza,
+          w: 6 + Math.random() * 6, h: 3 + Math.random() * 4,
+          rot: Math.random() * Math.PI, vrot: (Math.random() - 0.5) * 0.4,
+          color: COLORES_CONFETI[Math.floor(Math.random() * COLORES_CONFETI.length)],
+          vida: 1
+        };
+      });
+
+      (function animar() {
+        c.clearRect(0, 0, innerWidth, innerHeight);
+        let vivas = 0;
+        for (const p of piezas) {
+          p.vx *= 0.985;          // rozamiento del aire
+          p.vy += 0.28;           // gravedad
+          p.x += p.vx; p.y += p.vy;
+          p.rot += p.vrot;
+          p.vida -= 0.011;
+          if (p.vida <= 0 || p.y > innerHeight + 20) continue;
+          vivas++;
+          c.save();
+          c.globalAlpha = Math.max(p.vida, 0);
+          c.translate(p.x, p.y);
+          c.rotate(p.rot);
+          c.fillStyle = p.color;
+          c.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+          c.restore();
+        }
+        if (vivas) requestAnimationFrame(animar);
+        else canvas.remove();
+      })();
+    }
+
+    // --- Todo junto: sonido + confeti + "rebote" del botón ---
+    function celebrar(boton) {
+      sonidoCaja();
+      confeti(boton);
+      boton.animate(
+        [{ transform: 'scale(1)' }, { transform: 'scale(1.07)' }, { transform: 'scale(1)' }],
+        { duration: 300, easing: 'ease-out' }
+      );
+    }
+
+    const form = document.getElementById('registro');
+
+    // --- Tipo de contribuyente: activa/desactiva Carrera y Año ---
+    const tipo = document.getElementById('tipo');
+    const seccionCursada = document.getElementById('seccion-cursada');
+    const notaCursada = document.getElementById('nota-cursada');
+    const camposCursada = ['carrera', 'anio'].map(id => document.getElementById(id));
+
+    function aplicarTipo() {
+      // Carrera y Año solo se completan si es Alumno (o si todavía no eligió nada)
+      const aplica = tipo.value === '' || tipo.value === 'Alumno';
+      camposCursada.forEach(campo => {
+        campo.disabled = !aplica;      // gris y sin poder tocarlo
+        campo.required = aplica;       // solo obligatorio si aplica
+        if (!aplica) campo.selectedIndex = 0;   // borra lo que hubiera elegido
+      });
+      seccionCursada.classList.toggle('inactiva', !aplica);
+      notaCursada.hidden = aplica;
+    }
+    tipo.addEventListener('change', aplicarTipo);
+
+    const ok = document.getElementById('ok');
+
+    // Solo números en el DNI
+    document.getElementById('dni').addEventListener('input', e => {
+      e.target.value = e.target.value.replace(/\D/g, '');
+    });
+
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      ok.style.display = 'none';
+
+      if (!form.checkValidity()) {
+        form.classList.add('was-validated');
+        return;
+      }
+
+      const boton = form.querySelector('button[type="submit"]');
+      boton.disabled = true;            // evita doble envío (doble pago)
+
+      try {
+        // Los campos desactivados (carrera/año de docentes) no se envían
+        const respuesta = await fetch('/registrar', {
+          method: 'POST',
+          body: new FormData(form)
+        });
+        if (respuesta.status === 401) {   // la sesión venció: volver a pedir el PIN
+          window.location.href = "{{ url_for('login') }}";
+          return;
+        }
+        const datos = await respuesta.json();
+
+        if (!respuesta.ok || !datos.ok) {
+          throw new Error(datos.error || 'No se pudo registrar.');
+        }
+
+        ok.textContent = datos.mensaje || '¡Datos enviados correctamente!';
+        ok.classList.remove('error');
+        ok.style.display = 'block';
+
+        celebrar(boton);                // sonido + confeti solo si el servidor confirmó
+        form.reset();
+        aplicarTipo();
+        form.classList.remove('was-validated');
+      } catch (err) {
+        ok.textContent = err.message || 'Error de conexión con el servidor.';
+        ok.classList.add('error');
+        ok.style.display = 'block';
+      } finally {
+        boton.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
